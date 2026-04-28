@@ -55,7 +55,41 @@ public struct Dependency: Item, Sendable {
     public init<T>(_ resolver: @autoclosure @escaping @Sendable () -> T) {
         module = IndependentGraphModule(resolver: resolver).eraseToAnyDependencyModule()
     }
-    
+
+    // MARK: - @MainActor Initializers
+
+    public init<T: Sendable>(for type: T.Type, resolver: @escaping @MainActor @Sendable (Graph, [CVarArg]) -> T) {
+        module = MainActorGraphModule(resolver: resolver).eraseToAnyDependencyModule()
+    }
+
+    public init<T: Sendable>(for type: T.Type, resolver: @escaping @MainActor @Sendable (Graph) -> T) {
+        module = MainActorGraphModule(resolver: { graph, _ in resolver(graph) }).eraseToAnyDependencyModule()
+    }
+
+    public init<T: Sendable>(for type: T.Type, resolver: @escaping @MainActor @Sendable () -> T) {
+        module = MainActorIndependentGraphModule(resolver: resolver).eraseToAnyDependencyModule()
+    }
+
+    public init<T: Sendable>(for type: T.Type, resolver: @autoclosure @escaping @MainActor @Sendable () -> T) {
+        module = MainActorIndependentGraphModule(resolver: resolver).eraseToAnyDependencyModule()
+    }
+
+    public init<T: Sendable>(_ resolver: @escaping @MainActor @Sendable (Graph, [CVarArg]) -> T) {
+        module = MainActorGraphModule(resolver: resolver).eraseToAnyDependencyModule()
+    }
+
+    public init<T: Sendable>(_ resolver: @escaping @MainActor @Sendable (Graph) -> T) {
+        module = MainActorGraphModule(resolver: { graph, _ in resolver(graph) }).eraseToAnyDependencyModule()
+    }
+
+    public init<T: Sendable>(_ resolver: @escaping @MainActor @Sendable () -> T) {
+        module = MainActorIndependentGraphModule(resolver: resolver).eraseToAnyDependencyModule()
+    }
+
+    public init<T: Sendable>(_ resolver: @autoclosure @escaping @MainActor @Sendable () -> T) {
+        module = MainActorIndependentGraphModule(resolver: resolver).eraseToAnyDependencyModule()
+    }
+
     public var scope: Scope {
         return module.scope
     }

@@ -78,6 +78,39 @@ struct IndependentGraphModule<T>: Module {
 
 }
 
+struct MainActorGraphModule<T: Sendable>: Module {
+
+    let resolver: @MainActor @Sendable (Graph, [CVarArg]) -> T
+    
+    init(resolver: @escaping @MainActor @Sendable (Graph, [CVarArg]) -> T) {
+        self.resolver = resolver
+    }
+
+    func module(with graph: Graph, arguments: [CVarArg]) -> T {
+        nonisolated(unsafe) let args = arguments
+        return MainActor.assumeIsolated {
+            resolver(graph, args)
+        }
+    }
+
+}
+
+struct MainActorIndependentGraphModule<T: Sendable>: Module {
+
+    let resolver: @MainActor @Sendable () -> T
+    
+    init(resolver: @escaping @MainActor @Sendable () -> T) {
+        self.resolver = resolver
+    }
+
+    func module(with graph: Graph, arguments: [CVarArg]) -> T {
+        MainActor.assumeIsolated {
+            resolver()
+        }
+    }
+
+}
+
 extension Module {
     
     func eraseToAnyDependencyModule() -> AnyModule {
