@@ -8,7 +8,7 @@
 import XCTest
 @testable import DependencyInjection
 
-public class InjectTests: XCTestCase {
+final class InjectTests: XCTestCase {
     
     func testInject() {
         struct Mock {
@@ -134,7 +134,7 @@ public class InjectTests: XCTestCase {
         struct Mock {
             @LazyInject var integer: Int
         }
-        var calledDependency = false
+        nonisolated(unsafe) var calledDependency = false
         let graph = Graph {
             Dependency { (_) -> Int in
                 calledDependency = true
@@ -169,7 +169,7 @@ public class InjectTests: XCTestCase {
         struct Mock {
             @LazyInject(arguments: 1) var integer: Int
         }
-        var calledDependency = false
+        nonisolated(unsafe) var calledDependency = false
         let graph = Graph {
             Dependency { _, arguments -> Int in
                 calledDependency = true
@@ -221,7 +221,7 @@ public class InjectTests: XCTestCase {
         struct Mock {
             @MutableLazyInject var integer: Int
         }
-        var calledDependency = false
+        nonisolated(unsafe) var calledDependency = false
         let graph = Graph {
             Dependency { (_) -> Int in
                 calledDependency = true
@@ -256,7 +256,7 @@ public class InjectTests: XCTestCase {
         struct Mock {
             @MutableLazyInject(arguments: 1) var integer: Int
         }
-        var calledDependency = false
+        nonisolated(unsafe) var calledDependency = false
         let graph = Graph {
             Dependency { _, arguments -> Int in
                 calledDependency = true
@@ -315,29 +315,4 @@ public class InjectTests: XCTestCase {
         XCTAssertEqual(mock.subclass.string, "My String")
         XCTAssertEqual(mock.subclass.nonOptional, 2)
     }
-}
-
-extension InjectTests {
-    
-    public static var allTests = [
-        ("testInject", testInject),
-        ("testInjectNamedScope", testInjectNamedScope),
-        ("testInjectArguments", testInjectArguments),
-        ("testInjectGraph", testInjectGraph),
-        ("testMutableInject", testMutableInject),
-        ("testMutableInjectNamedScope", testMutableInjectNamedScope),
-        ("testMutableInjectArguments", testMutableInjectArguments),
-        ("testMutableInjectGraph", testMutableInjectGraph),
-        ("testMutableInjectIsMutable", testMutableInjectIsMutable),
-        ("testLazyInject", testLazyInject),
-        ("testLazyInjectNamedScope", testLazyInjectNamedScope),
-        ("testLazyInjectArguments", testLazyInjectArguments),
-        ("testLazyInjectGraph", testLazyInjectGraph),
-        ("testMutableLazyInject", testMutableLazyInject),
-        ("testMutableLazyInjectNamedScope", testMutableLazyInjectNamedScope),
-        ("testMutableLazyInjectArguments", testMutableLazyInjectArguments),
-        ("testMutableLazyInjectGraph", testMutableLazyInjectGraph),
-        ("testMutableLazyInjectIsMutable", testMutableLazyInjectIsMutable)
-    ]
-    
 }

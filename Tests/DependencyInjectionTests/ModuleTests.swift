@@ -8,7 +8,7 @@
 import XCTest
 @testable import DependencyInjection
 
-public class ModuleTests: XCTestCase {
+final class ModuleTests: XCTestCase {
     
     func testEraseToAnyModule() {
         struct MockModule: Module {
@@ -25,7 +25,7 @@ public class ModuleTests: XCTestCase {
     
 }
 
-public class IndependentGraphModuleTests: XCTestCase {
+final class IndependentGraphModuleTests: XCTestCase {
     
     func testModule() {
         let module = IndependentGraphModule {
@@ -36,7 +36,7 @@ public class IndependentGraphModuleTests: XCTestCase {
     
 }
 
-public class GraphModuleTests: XCTestCase {
+final class GraphModuleTests: XCTestCase {
     
     func testModule_dependency() {
         let module = GraphModule<String> { (graph: Graph, arguments: [CVarArg]) in
@@ -56,30 +56,5 @@ public class GraphModuleTests: XCTestCase {
         }
         XCTAssertEqual(module.module(with: Graph(dependencies: []), arguments: [5]), "My String: 5")
     }
-    
-}
-
-extension ModuleTests {
-    
-    public static var allTests = [
-        ("testEraseToAnyModule", testEraseToAnyModule)
-    ]
-    
-}
-
-extension IndependentGraphModuleTests {
-    
-    public static var allTests = [
-        ("testModule", testModule)
-    ]
-    
-}
-
-extension GraphModuleTests {
-    
-    public static var allTests = [
-        ("testModule_dependency", testModule_dependency),
-        ("testModule_arguments", testModule_arguments)
-    ]
     
 }

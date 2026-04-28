@@ -7,12 +7,28 @@
 
 import Foundation
 
-public struct Graph {
+/// A simple lock-protected container for use as thread-safe static storage.
+private final class Locked<Value>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value: Value
     
-    public let dependencies: [Item]
+    init(_ value: Value) {
+        self.value = value
+    }
+    
+    func withLock<T>(_ body: (inout Value) -> T) -> T {
+        lock.lock()
+        defer { lock.unlock() }
+        return body(&value)
+    }
+}
+
+public struct Graph: Sendable {
+    
+    public let dependencies: [any Item]
     private let identifier = UUID()
     
-    init(dependencies: [Item]) {
+    init(dependencies: [any Item]) {
         self.dependencies = dependencies
     }
     
@@ -58,7 +74,7 @@ public struct Graph {
 
 extension Graph {
     
-    static var storedDependencies = [UUID: [String: Any]]()
+    private static let _storedDependencies = Locked<[UUID: [String: Any]]>([:])
     
     static func scopeName(for scope: Scope) -> String {
         switch scope {
@@ -83,25 +99,29 @@ extension Graph {
         guard scope != .new else {
             return nil
         }
-        guard let storedObjects = storedDependencies[identifier] else {
-            return nil
+        return _storedDependencies.withLock { storedDependencies in
+            guard let storedObjects = storedDependencies[identifier] else {
+                return nil
+            }
+            let objectStoreName = objectIdentifierName(for: T.self, with: scope, arguments: arguments)
+            return storedObjects[objectStoreName] as? T
         }
-        let objectStoreName = objectIdentifierName(for: T.self, with: scope, arguments: arguments)
-        return storedObjects[objectStoreName] as? T
     }
     
     static func store<T>(object: T, with scope: Scope, forIdentifier identifier: UUID, arguments: [CVarArg]) {
         guard scope != .new else {
             return
         }
-        var storedObjects = storedDependencies[identifier] ?? [:]
-        storedObjects[objectIdentifierName(for: T.self, with: scope, arguments: arguments)] = object
-        storedDependencies[identifier] = storedObjects
+        _storedDependencies.withLock { storedDependencies in
+            var storedObjects = storedDependencies[identifier] ?? [:]
+            storedObjects[objectIdentifierName(for: T.self, with: scope, arguments: arguments)] = object
+            storedDependencies[identifier] = storedObjects
+        }
     }
 }
 
-public protocol PartialGraph {
-    var dependencies: [Item] { get }
+public protocol PartialGraph: Sendable {
+    var dependencies: [any Item] { get }
 }
 
 extension Graph: PartialGraph { }
@@ -116,7 +136,12 @@ extension Graph {
 
 extension Graph {
     
-    public internal(set) static var `default`: Graph = Graph(dependencies: [])
+    private static let _default = Locked<Graph>(Graph(dependencies: []))
+    
+    public static var `default`: Graph {
+        get { _default.withLock { $0 } }
+        set { _default.withLock { $0 = newValue } }
+    }
     
     public static func initialise(@GraphBuilder builder: () -> PartialGraph) {
         self.default = .init(builder: builder)

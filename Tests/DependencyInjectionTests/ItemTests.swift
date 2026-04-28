@@ -8,7 +8,7 @@
 import XCTest
 @testable import DependencyInjection
 
-public class DependencyTests: XCTestCase {
+final class DependencyTests: XCTestCase {
     
     func testWithScope() {
         let singleInstanceDependency = Dependency { 5 }
@@ -26,13 +26,5 @@ public class DependencyTests: XCTestCase {
         let dependency = Dependency { 5 }
         XCTAssertEqual(dependency.scope, .new)
     }
-    
-}
-
-extension DependencyTests {
-    
-    public static var allTests = [
-        ("testWithScope", testWithScope)
-    ]
     
 }

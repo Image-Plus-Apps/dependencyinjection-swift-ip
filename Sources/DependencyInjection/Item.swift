@@ -1,6 +1,6 @@
 import Foundation
 
-public protocol Item {
+public protocol Item: Sendable {
     
     var scope: Scope { get }
     func resolve<T>(with graph: Graph, arguments: [CVarArg]) -> T?
@@ -8,7 +8,7 @@ public protocol Item {
     
 }
 
-public struct Dependency: Item {
+public struct Dependency: Item, Sendable {
 
     let module: AnyModule
     
@@ -16,43 +16,43 @@ public struct Dependency: Item {
         self.module = module
     }
 
-    public init<T>(for type: T.Type, resolver: @escaping (Graph, [CVarArg]) -> T) {
+    public init<T>(for type: T.Type, resolver: @escaping @Sendable (Graph, [CVarArg]) -> T) {
         module = GraphModule(resolver: { (graph: Graph, arguments: [CVarArg]) in
             resolver(graph, arguments)
         }).eraseToAnyDependencyModule()
     }
 
-    public init<T>(for type: T.Type, resolver: @escaping (Graph) -> T) {
+    public init<T>(for type: T.Type, resolver: @escaping @Sendable (Graph) -> T) {
         module = GraphModule(resolver: { (graph: Graph, arguments: [CVarArg]) in
             resolver(graph)
         }).eraseToAnyDependencyModule()
     }
 
-    public init<T>(for type: T.Type, resolver: @escaping () -> T) {
+    public init<T>(for type: T.Type, resolver: @escaping @Sendable () -> T) {
         module = IndependentGraphModule(resolver: resolver).eraseToAnyDependencyModule()
     }
 
-    public init<T>(for type: T.Type, resolver: @autoclosure @escaping () -> T) {
+    public init<T>(for type: T.Type, resolver: @autoclosure @escaping @Sendable () -> T) {
         module = IndependentGraphModule(resolver: resolver).eraseToAnyDependencyModule()
     }
 
-    public init<T>(_ resolver: @escaping (Graph, [CVarArg]) -> T) {
+    public init<T>(_ resolver: @escaping @Sendable (Graph, [CVarArg]) -> T) {
         module = GraphModule(resolver: { (graph: Graph, arguments: [CVarArg]) in
             resolver(graph, arguments)
         }).eraseToAnyDependencyModule()
     }
 
-    public init<T>(_ resolver: @escaping (Graph) -> T) {
+    public init<T>(_ resolver: @escaping @Sendable (Graph) -> T) {
         module = GraphModule(resolver: { (graph: Graph, arguments: [CVarArg]) in
             resolver(graph)
         }).eraseToAnyDependencyModule()
     }
 
-    public init<T>(_ resolver: @escaping () -> T) {
+    public init<T>(_ resolver: @escaping @Sendable () -> T) {
         module = IndependentGraphModule(resolver: resolver).eraseToAnyDependencyModule()
     }
 
-    public init<T>(_ resolver: @autoclosure @escaping () -> T) {
+    public init<T>(_ resolver: @autoclosure @escaping @Sendable () -> T) {
         module = IndependentGraphModule(resolver: resolver).eraseToAnyDependencyModule()
     }
     

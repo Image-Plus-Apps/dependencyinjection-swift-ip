@@ -1,7 +1,7 @@
 import Foundation
 
 @propertyWrapper
-public class Inject<T> {
+public class Inject<T>: @unchecked Sendable {
     var _wrappedValue: T
     public init(name: Scope.Name? = nil, graph: Graph = .default, arguments: CVarArg...) {
         if let name = name {
@@ -26,21 +26,21 @@ public class Inject<T> {
 
 @propertyWrapper
 @dynamicMemberLookup
-public class LazyInject<T> {
+public class LazyInject<T>: @unchecked Sendable {
     var _wrappedValue: T?
     var initialisationFunction: ((inout T) -> Void)? = nil
     
     private var name: Scope.Name?
-    private var graphResolver: () -> Graph
+    private var graphResolver: @Sendable () -> Graph
     private var arguments: [CVarArg]?
     
-    public init(name: Scope.Name? = nil, graph: @escaping @autoclosure () -> Graph = .default, arguments: CVarArg...) {
+    public init(name: Scope.Name? = nil, graph: @escaping @Sendable @autoclosure () -> Graph = .default, arguments: CVarArg...) {
         self.name = name
         self.graphResolver = graph
         self.arguments = arguments
     }
     
-    public init(name: Scope.Name? = nil, graph: @escaping @autoclosure () -> Graph = .default) {
+    public init(name: Scope.Name? = nil, graph: @escaping @Sendable @autoclosure () -> Graph = .default) {
         self.name = name
         self.graphResolver = graph
         self.arguments = nil
@@ -96,7 +96,7 @@ public class LazyInject<T> {
 }
 
 @propertyWrapper
-public class MutableInject<T>: Inject<T> {
+public final class MutableInject<T>: Inject<T>, @unchecked Sendable {
     public override var wrappedValue: T {
         get {
             super.wrappedValue
@@ -108,7 +108,7 @@ public class MutableInject<T>: Inject<T> {
 }
 
 @propertyWrapper
-public class MutableLazyInject<T>: LazyInject<T> {
+public final class MutableLazyInject<T>: LazyInject<T>, @unchecked Sendable {
     public override var wrappedValue: T {
         get {
             super.wrappedValue

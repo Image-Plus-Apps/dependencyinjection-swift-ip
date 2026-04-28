@@ -8,7 +8,7 @@
 import XCTest
 @testable import DependencyInjection
 
-public class ScopeTests: XCTestCase {
+final class ScopeTests: XCTestCase {
     
     func testEquality_new() {
         XCTAssertEqual(Scope.new, Scope.new)
@@ -28,15 +28,5 @@ public class ScopeTests: XCTestCase {
         XCTAssertNotEqual(Scope.singleInstance, Scope.new)
         XCTAssertNotEqual(Scope.singleInstance, Scope.named("Scope Name"))
     }
-    
-}
-
-extension ScopeTests {
-    
-    public static var allTests = [
-        ("testEquality_new", testEquality_new),
-        ("testEquality_scope", testEquality_scope),
-        ("testEquality_singleInstance", testEquality_singleInstance)
-    ]
     
 }

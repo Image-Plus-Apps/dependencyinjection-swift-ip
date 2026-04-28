@@ -1,8 +1,8 @@
 import Foundation
 
-public enum Scope {
+public enum Scope: Sendable {
     
-    public struct Name: Hashable, ExpressibleByStringLiteral {
+    public struct Name: Hashable, ExpressibleByStringLiteral, Sendable {
         
         let rawValue: String
         

@@ -1,6 +1,6 @@
 import Foundation
 
-protocol Module {
+protocol Module: Sendable {
 
     associatedtype ResultType
 
@@ -8,9 +8,9 @@ protocol Module {
 
 }
 
-struct AnyModule {
+struct AnyModule: @unchecked Sendable {
 
-    typealias Handler<ResultType> = (Graph, [CVarArg]) -> ResultType?
+    typealias Handler<ResultType> = @Sendable (Graph, [CVarArg]) -> ResultType?
 
     let handler: Any
     let scope: Scope
@@ -52,9 +52,9 @@ struct AnyModule {
 
 struct GraphModule<T>: Module {
 
-    let resolver: (Graph, [CVarArg]) -> T
+    let resolver: @Sendable (Graph, [CVarArg]) -> T
     
-    init(resolver: @escaping (Graph, [CVarArg]) -> T) {
+    init(resolver: @escaping @Sendable (Graph, [CVarArg]) -> T) {
         self.resolver = resolver
     }
 
@@ -66,9 +66,9 @@ struct GraphModule<T>: Module {
 
 struct IndependentGraphModule<T>: Module {
 
-    let resolver: () -> T
+    let resolver: @Sendable () -> T
     
-    init(resolver: @escaping () -> T) {
+    init(resolver: @escaping @Sendable () -> T) {
         self.resolver = resolver
     }
 
