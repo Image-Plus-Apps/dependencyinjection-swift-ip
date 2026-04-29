@@ -70,6 +70,49 @@ public struct Graph: Sendable {
         Self.resolve(scope: .named(name), for: identifier, arguments: []) ?? resolve(scope: .named(name), with: [])
     }
     
+    // MARK: - @MainActor Resolution
+    
+    /// Executes the given closure on the main thread with `@MainActor` isolation.
+    /// If already on the main thread, runs synchronously.
+    /// If on a background thread, dispatches synchronously to main.
+    private static func onMainThread<T: Sendable>(_ body: @MainActor @Sendable () -> T) -> T {
+        if Thread.isMainThread {
+            return MainActor.assumeIsolated { body() }
+        } else {
+            return DispatchQueue.main.sync {
+                MainActor.assumeIsolated { body() }
+            }
+        }
+    }
+    
+    /// Resolves a dependency on the main thread, allowing the resolved value
+    /// to be a `@MainActor`-isolated type. Safe to call from any thread.
+    public func resolveMainActor<T: Sendable>() -> T? {
+        Self.onMainThread {
+            resolve(scope: .new, with: []) as T?
+        }
+    }
+    
+    public func resolveMainActor<T: Sendable>(arguments: CVarArg...) -> T? {
+        nonisolated(unsafe) let args = arguments
+        return Self.onMainThread {
+            resolve(scope: .new, with: args) as T?
+        }
+    }
+    
+    public func resolveMainActor<T: Sendable>(scope: Scope.Name, arguments: CVarArg...) -> T? {
+        nonisolated(unsafe) let args = arguments
+        return Self.onMainThread {
+            (Self.resolve(scope: .named(scope), for: identifier, arguments: args) ?? resolve(scope: .named(scope), with: args)) as T?
+        }
+    }
+    
+    public func resolveMainActor<T: Sendable>(named name: Scope.Name) -> T? {
+        Self.onMainThread {
+            (Self.resolve(scope: .named(name), for: identifier, arguments: []) ?? resolve(scope: .named(name), with: [])) as T?
+        }
+    }
+    
 }
 
 extension Graph {

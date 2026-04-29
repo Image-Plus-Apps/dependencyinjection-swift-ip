@@ -88,8 +88,16 @@ struct MainActorGraphModule<T: Sendable>: Module {
 
     func module(with graph: Graph, arguments: [CVarArg]) -> T {
         nonisolated(unsafe) let args = arguments
-        return MainActor.assumeIsolated {
-            resolver(graph, args)
+        if Thread.isMainThread {
+            return MainActor.assumeIsolated {
+                resolver(graph, args)
+            }
+        } else {
+            return DispatchQueue.main.sync {
+                MainActor.assumeIsolated {
+                    resolver(graph, args)
+                }
+            }
         }
     }
 
@@ -104,8 +112,16 @@ struct MainActorIndependentGraphModule<T: Sendable>: Module {
     }
 
     func module(with graph: Graph, arguments: [CVarArg]) -> T {
-        MainActor.assumeIsolated {
-            resolver()
+        if Thread.isMainThread {
+            return MainActor.assumeIsolated {
+                resolver()
+            }
+        } else {
+            return DispatchQueue.main.sync {
+                MainActor.assumeIsolated {
+                    resolver()
+                }
+            }
         }
     }
 
