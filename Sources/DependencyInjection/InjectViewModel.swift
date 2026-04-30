@@ -40,11 +40,13 @@ public final class LazyInjectViewModel<T: Observable & AnyObject>: @unchecked Se
 
     public var wrappedValue: T {
         if _wrappedValue == nil {
+            let resolved: T
             if let name = name {
-                _wrappedValue = graphResolver().resolve(scope: name)!
+                resolved = graphResolver().resolve(scope: name)!
             } else {
-                _wrappedValue = graphResolver().resolve()!
+                resolved = graphResolver().resolve()!
             }
+            _wrappedValue = resolved
         }
         return _wrappedValue!
     }
