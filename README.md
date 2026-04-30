@@ -72,6 +72,38 @@ There are four property wrapper variants:
 | `@MutableInject` | Like `@Inject` but the value can be reassigned. |
 | `@MutableLazyInject` | Like `@LazyInject` but the value can be reassigned. |
 
+### Injecting @Observable View Models (iOS 17+)
+
+For `@Observable` view models in SwiftUI, use `@InjectViewModel` or `@LazyInjectViewModel`. These wrappers resolve from the graph and expose a `Bindable` projected value, so `$` bindings work directly:
+
+```swift
+@MainActor @Observable
+class HomeViewModel {
+    var searchText = ""
+    var results: [Item] = []
+}
+
+struct HomeView: View {
+    @InjectViewModel var viewModel: HomeViewModel
+
+    var body: some View {
+        TextField("Search", text: $viewModel.searchText)
+    }
+}
+```
+
+| Wrapper | Behaviour |
+| :-----: | ------ |
+| `@InjectViewModel` | Resolves immediately. `$` gives `Bindable` bindings. |
+| `@LazyInjectViewModel` | Resolves on first access. `$` gives `Bindable` bindings. |
+
+Both wrappers are `@MainActor` and require `T` to conform to `Observable & AnyObject`. They support the same `name` and `graph` parameters as `@Inject`:
+
+```swift
+@InjectViewModel(name: "home") var viewModel: HomeViewModel
+@LazyInjectViewModel(graph: customGraph) var viewModel: HomeViewModel
+```
+
 ## Initialising Default Graph
 
 To initialise the default single value instance graph use `Graph.initialise`. The initialise method uses the same closure style as the `Graph.init` method.
