@@ -5,54 +5,50 @@ import Observation
 @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
 @propertyWrapper
 @MainActor
-public final class InjectViewModel<T: Observable & AnyObject>: @unchecked Sendable {
-    private var _wrappedValue: T
+public struct InjectViewModel<T: Observable & AnyObject>: DynamicProperty {
+    @State private var value: T
 
     public init(name: Scope.Name? = nil, graph: Graph = .default) {
+        let resolved: T
         if let name = name {
-            _wrappedValue = graph.resolve(scope: name)!
+            resolved = graph.resolve(scope: name)!
         } else {
-            _wrappedValue = graph.resolve()!
+            resolved = graph.resolve()!
         }
+        _value = State(initialValue: resolved)
     }
 
     public var wrappedValue: T {
-        _wrappedValue
+        value
     }
 
     public var projectedValue: Bindable<T> {
-        Bindable(_wrappedValue)
+        Bindable(value)
     }
 }
 
 @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
 @propertyWrapper
 @MainActor
-public final class LazyInjectViewModel<T: Observable & AnyObject>: @unchecked Sendable {
-    private var _wrappedValue: T?
-    private let name: Scope.Name?
-    private let graphResolver: @Sendable () -> Graph
+public struct LazyInjectViewModel<T: Observable & AnyObject>: DynamicProperty {
+    @State private var value: T
 
-    public init(name: Scope.Name? = nil, graph: @escaping @Sendable @autoclosure () -> Graph = .default) {
-        self.name = name
-        self.graphResolver = graph
+    public init(name: Scope.Name? = nil, graph: @Sendable @autoclosure () -> Graph = .default) {
+        let resolved: T
+        if let name = name {
+            resolved = graph().resolve(scope: name)!
+        } else {
+            resolved = graph().resolve()!
+        }
+        _value = State(initialValue: resolved)
     }
 
     public var wrappedValue: T {
-        if _wrappedValue == nil {
-            let resolved: T
-            if let name = name {
-                resolved = graphResolver().resolve(scope: name)!
-            } else {
-                resolved = graphResolver().resolve()!
-            }
-            _wrappedValue = resolved
-        }
-        return _wrappedValue!
+        value
     }
 
     public var projectedValue: Bindable<T> {
-        Bindable(wrappedValue)
+        Bindable(value)
     }
 }
 
