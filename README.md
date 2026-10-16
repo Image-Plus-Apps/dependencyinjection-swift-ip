@@ -74,7 +74,7 @@ There are four property wrapper variants:
 
 ### Injecting @Observable View Models (iOS 17+)
 
-For `@Observable` view models in SwiftUI, use `@InjectViewModel` or `@LazyInjectViewModel`. These wrappers resolve from the graph, expose `Bindable` projected values for `$` bindings, and **survive SwiftUI view recreation** thanks to `@State` + `DynamicProperty` under the hood:
+For `@Observable` view models in SwiftUI, use `@InjectViewModel` or `@LazyInjectViewModel`. These wrappers resolve from the graph, expose `Bindable` projected values for `$` bindings, and **survive SwiftUI view recreation** thanks to `@StateObject` + `DynamicProperty` under the hood:
 
 ```swift
 @MainActor @Observable
