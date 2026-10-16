@@ -2,18 +2,28 @@
 import SwiftUI
 import Observation
 
-/// Owns a resolved view model on behalf of `@StateObject`, whose autoclosure
-/// SwiftUI evaluates once per view identity, so the graph is only asked for an
-/// instance once. It never publishes: views observe the `@Observable` view
-/// model's own properties.
-private final class ResolvedViewModel<T: AnyObject>: ObservableObject {
-    let value: T
+/// Resolves a view model from the graph on first read. Creating one resolves
+/// nothing, so a holder per view re-creation is cheap. `@State` keeps the
+/// holder from the view's first installation, so the graph is asked once per
+/// view identity. Before installation, reads go to the view's own holder, so
+/// an instance configured then is the one SwiftUI keeps.
+@MainActor
+private final class ResolvedViewModel<T: AnyObject> {
+    private let name: Scope.Name?
+    private let graph: Graph
+
+    private(set) lazy var value: T = resolve()
 
     init(name: Scope.Name?, graph: Graph) {
+        self.name = name
+        self.graph = graph
+    }
+
+    private func resolve() -> T {
         if let name = name {
-            value = graph.resolve(scope: name)!
+            return graph.resolve(scope: name)!
         } else {
-            value = graph.resolve()!
+            return graph.resolve()!
         }
     }
 }
@@ -22,10 +32,10 @@ private final class ResolvedViewModel<T: AnyObject>: ObservableObject {
 @propertyWrapper
 @MainActor
 public struct InjectViewModel<T: Observable & AnyObject>: DynamicProperty {
-    @StateObject private var storage: ResolvedViewModel<T>
+    @State private var storage: ResolvedViewModel<T>
 
     public init(name: Scope.Name? = nil, graph: Graph = .default) {
-        _storage = StateObject(wrappedValue: ResolvedViewModel(name: name, graph: graph))
+        _storage = State(initialValue: ResolvedViewModel(name: name, graph: graph))
     }
 
     public var wrappedValue: T {
@@ -41,11 +51,11 @@ public struct InjectViewModel<T: Observable & AnyObject>: DynamicProperty {
 @propertyWrapper
 @MainActor
 public struct LazyInjectViewModel<T: Observable & AnyObject>: DynamicProperty {
-    @StateObject private var storage: ResolvedViewModel<T>
+    @State private var storage: ResolvedViewModel<T>
 
     public init(name: Scope.Name? = nil, graph: @Sendable @autoclosure () -> Graph = .default) {
         let graph = graph()
-        _storage = StateObject(wrappedValue: ResolvedViewModel(name: name, graph: graph))
+        _storage = State(initialValue: ResolvedViewModel(name: name, graph: graph))
     }
 
     public var wrappedValue: T {

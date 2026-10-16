@@ -34,6 +34,7 @@ final class InjectViewModelTests: XCTestCase {
     final class Log {
         var childInits = 0
         var bodyInstances: [ObjectIdentifier] = []
+        var bodyTexts: [String] = []
     }
 
     /// Changing `tick` re-evaluates the parent's body, which re-creates the
@@ -63,6 +64,12 @@ final class InjectViewModelTests: XCTestCase {
             log.childInits += 1
         }
 
+        /// Sets up the view model before SwiftUI installs the view.
+        func configured(text: String) -> Self {
+            viewModel.text = text
+            return self
+        }
+
         var body: some View {
             probe(viewModel, $viewModel.text, log)
         }
@@ -75,6 +82,12 @@ final class InjectViewModelTests: XCTestCase {
         init(log: Log) {
             self.log = log
             log.childInits += 1
+        }
+
+        /// Sets up the view model before SwiftUI installs the view.
+        func configured(text: String) -> Self {
+            viewModel.text = text
+            return self
         }
 
         var body: some View {
@@ -131,6 +144,7 @@ final class InjectViewModelTests: XCTestCase {
 
     private static func probe(_ viewModel: ViewModel, _ text: Binding<String>, _ log: Log) -> some View {
         log.bodyInstances.append(ObjectIdentifier(viewModel))
+        log.bodyTexts.append(viewModel.text)
         return TextField("", text: text)
     }
 
@@ -186,6 +200,60 @@ final class InjectViewModelTests: XCTestCase {
             RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.01))
         }
         XCTAssertTrue(condition(), "SwiftUI did not apply the update in time", file: file, line: line)
+    }
+
+    // MARK: - Configured before installation
+
+    func testInjectViewModel_configuredBeforeInstall_isTheInstalledInstance() {
+        let factory = Factory()
+        useDefaultGraph(makeGraph(scope: .new, factory: factory))
+        let log = Log()
+        let view = InjectChild(log: log)
+        view.viewModel.text = "configured"
+
+        host(ParentState(), log: log) { view }
+
+        XCTAssertEqual(log.bodyTexts.last, "configured")
+        XCTAssertEqual(factory.resolveCount, 1)
+    }
+
+    func testLazyInjectViewModel_configuredBeforeInstall_isTheInstalledInstance() {
+        let factory = Factory()
+        useDefaultGraph(makeGraph(scope: .new, factory: factory))
+        let log = Log()
+        let view = LazyInjectChild(log: log)
+        view.viewModel.text = "configured"
+
+        host(ParentState(), log: log) { view }
+
+        XCTAssertEqual(log.bodyTexts.last, "configured")
+        XCTAssertEqual(factory.resolveCount, 1)
+    }
+
+    func testInjectViewModel_configuredInParentBody_keepsConfiguredInstance() {
+        let factory = Factory()
+        useDefaultGraph(makeGraph(scope: .new, factory: factory))
+        let log = Log()
+        let state = ParentState()
+        host(state, log: log) { InjectChild(log: log).configured(text: "configured") }
+
+        rerenderParent(state, log: log, times: 2)
+
+        XCTAssertEqual(log.bodyTexts.last, "configured")
+        XCTAssertEqual(Set(log.bodyInstances).count, 1)
+    }
+
+    func testLazyInjectViewModel_configuredInParentBody_keepsConfiguredInstance() {
+        let factory = Factory()
+        useDefaultGraph(makeGraph(scope: .new, factory: factory))
+        let log = Log()
+        let state = ParentState()
+        host(state, log: log) { LazyInjectChild(log: log).configured(text: "configured") }
+
+        rerenderParent(state, log: log, times: 2)
+
+        XCTAssertEqual(log.bodyTexts.last, "configured")
+        XCTAssertEqual(Set(log.bodyInstances).count, 1)
     }
 
     // MARK: - Unscoped registrations
